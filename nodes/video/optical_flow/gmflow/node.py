@@ -8,8 +8,8 @@ from ..common import (
     get_cached_model,
     get_torch_device,
     pad_to_multiple,
+    require_pkg,
     resize_flow,
-    run_raft_fallback,
     video_to_frames,
 )
 
@@ -21,10 +21,10 @@ class GMFlowNode(io.ComfyNode):
             node_id="llfnodes.GMFlow",
             display_name="GMFlow",
             category=CATEGORY,
-            description="GMFlow 光流。未安装 gmflow/权重时回退到 torchvision RAFT。",
+            description="GMFlow 光流。需安装 gmflow 并填写权重路径；失败直接报错。",
             inputs=[
                 io.Video.Input("video"),
-                io.String.Input("model_path", default="", tooltip="GMFlow 权重路径（.pth）；空则 RAFT 回退"),
+                io.String.Input("model_path", default="", tooltip="GMFlow 权重路径（.pth）"),
                 io.Int.Input("max_pairs", default=0, min=0, max=512),
             ],
             outputs=[io.Image.Output("FLOW")],
@@ -32,13 +32,16 @@ class GMFlowNode(io.ComfyNode):
 
     @classmethod
     def execute(cls, video, model_path, max_pairs):
+        require_pkg("gmflow", "pip install gmflow 或按 https://github.com/haofeixu/gmflow 安装")
+        if not model_path:
+            raise RuntimeError("GMFlow 需要填写 model_path（权重 .pth）。")
+
         try:
             from gmflow.gmflow import GMFlow
-        except Exception:
-            return io.NodeOutput(run_raft_fallback(video, max_pairs=max_pairs))
-
-        if not model_path:
-            return io.NodeOutput(run_raft_fallback(video, max_pairs=max_pairs))
+        except Exception as e:
+            raise RuntimeError(
+                "已检测到 gmflow 包名，但无法导入 GMFlow 模型类。请按官方仓库安装完整代码与权重。"
+            ) from e
 
         def loader(device):
             model = GMFlow(

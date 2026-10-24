@@ -9,7 +9,6 @@ from ..common import (
     get_torch_device,
     pad_to_multiple,
     resize_flow,
-    run_raft_fallback,
     video_to_frames,
 )
 
@@ -21,10 +20,10 @@ class FlowFormerNode(io.ComfyNode):
             node_id="llfnodes.FlowFormer",
             display_name="FlowFormer",
             category=CATEGORY,
-            description="FlowFormer 光流。未安装官方依赖/权重时回退到 torchvision RAFT。",
+            description="FlowFormer 光流。需官方依赖与权重；失败直接报错。",
             inputs=[
                 io.Video.Input("video"),
-                io.String.Input("model_path", default="", tooltip="FlowFormer 权重路径（.pth）；空则 RAFT 回退"),
+                io.String.Input("model_path", default="", tooltip="FlowFormer 权重路径（.pth）"),
                 io.Int.Input("max_pairs", default=0, min=0, max=512),
             ],
             outputs=[io.Image.Output("FLOW")],
@@ -34,6 +33,7 @@ class FlowFormerNode(io.ComfyNode):
     def execute(cls, video, model_path, max_pairs):
         model_cls = None
         build_fn = None
+        last_err = None
         for mod_name, attr in [
             ("flowformer", "FlowFormer"),
             ("core.FlowFormer", "FlowFormer"),
@@ -43,16 +43,22 @@ class FlowFormerNode(io.ComfyNode):
                 mod = __import__(mod_name, fromlist=[attr])
                 model_cls = getattr(mod, attr)
                 break
-            except Exception:
-                pass
+            except Exception as e:
+                last_err = e
         if model_cls is None:
             try:
                 from core.FlowFormer import build_flowformer as build_fn  # type: ignore
-            except Exception:
-                pass
+            except Exception as e:
+                last_err = e
 
-        if (model_cls is None and build_fn is None) or not model_path:
-            return io.NodeOutput(run_raft_fallback(video, max_pairs=max_pairs))
+        if model_cls is None and build_fn is None:
+            raise RuntimeError(
+                "缺少 FlowFormer 依赖。请按 https://github.com/drinkingcoder/FlowFormer-Official "
+                "安装并将仓库加入 PYTHONPATH。\n"
+                f"详情: {last_err}"
+            )
+        if not model_path:
+            raise RuntimeError("FlowFormer 需要填写 model_path（权重 .pth）。")
 
         def loader(device):
             if build_fn is not None:

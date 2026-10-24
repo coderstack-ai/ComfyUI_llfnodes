@@ -1,11 +1,6 @@
 from comfy_api.latest import io
 
-from ...depth_estimation.common import run_hf_depth
-
 CATEGORY = "llfnodes/图像处理/单目三维重建"
-
-# 官方 vggt 不在 PyPI。用 Depth Anything 作可运行深度预览。
-_DEPTH_MODEL = "depth-anything/Depth-Anything-V2-Small-hf"
 
 
 class VGGTNode(io.ComfyNode):
@@ -15,17 +10,17 @@ class VGGTNode(io.ComfyNode):
             node_id="llfnodes.VGGT",
             display_name="VGGT",
             category=CATEGORY,
-            description=(
-                "单目深度预览。完整 VGGT 需 GitHub 安装；"
-                "当前用 Depth Anything V2 输出深度图。"
-            ),
+            description="VGGT：需官方仓库与权重；未就绪时直接报错。",
             inputs=[
                 io.Image.Input("image"),
-                io.Boolean.Input("invert", default=False, label_on="near=black", label_off="near=white"),
+                io.String.Input("model_path", default="", tooltip="VGGT 权重/仓库路径"),
             ],
             outputs=[io.Image.Output("DEPTH")],
         )
 
     @classmethod
-    def execute(cls, image, invert=False):
-        return io.NodeOutput(run_hf_depth(_DEPTH_MODEL, image, invert=invert))
+    def execute(cls, image, model_path=""):
+        raise RuntimeError(
+            "VGGT 未安装。请按官方仓库安装并填写 model_path。"
+            + (f" 当前 model_path={model_path!r}。" if model_path else "")
+        )

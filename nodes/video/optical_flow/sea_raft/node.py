@@ -9,7 +9,6 @@ from ..common import (
     get_torch_device,
     pad_to_multiple,
     resize_flow,
-    run_raft_fallback,
     video_to_frames,
 )
 
@@ -21,10 +20,10 @@ class SEARAFTNode(io.ComfyNode):
             node_id="llfnodes.SEARAFT",
             display_name="SEA-RAFT",
             category=CATEGORY,
-            description="SEA-RAFT 光流。未安装官方依赖/权重时回退到 torchvision RAFT。",
+            description="SEA-RAFT 光流。需官方依赖与权重；失败直接报错。",
             inputs=[
                 io.Video.Input("video"),
-                io.String.Input("model_path", default="", tooltip="SEA-RAFT 权重路径（.pth）；空则 RAFT 回退"),
+                io.String.Input("model_path", default="", tooltip="SEA-RAFT 权重路径（.pth）"),
                 io.Int.Input("iters", default=4, min=1, max=32),
                 io.Int.Input("max_pairs", default=0, min=0, max=512),
             ],
@@ -34,6 +33,7 @@ class SEARAFTNode(io.ComfyNode):
     @classmethod
     def execute(cls, video, model_path, iters, max_pairs):
         model_cls = None
+        last_err = None
         for mod_name, attr in [
             ("sea_raft", "RAFT"),
             ("searraft", "RAFT"),
@@ -43,11 +43,17 @@ class SEARAFTNode(io.ComfyNode):
                 mod = __import__(mod_name, fromlist=[attr])
                 model_cls = getattr(mod, attr)
                 break
-            except Exception:
-                pass
+            except Exception as e:
+                last_err = e
 
-        if model_cls is None or not model_path:
-            return io.NodeOutput(run_raft_fallback(video, max_pairs=max_pairs))
+        if model_cls is None:
+            raise RuntimeError(
+                "缺少 SEA-RAFT 依赖。请按 https://github.com/princeton-vl/SEA-RAFT 安装，"
+                "并将仓库加入 PYTHONPATH。\n"
+                f"详情: {last_err}"
+            )
+        if not model_path:
+            raise RuntimeError("SEA-RAFT 需要填写 model_path（权重 .pth）。")
 
         def loader(device):
             try:

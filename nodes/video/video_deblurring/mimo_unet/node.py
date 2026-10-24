@@ -1,5 +1,5 @@
 from comfy_api.latest import io
-from ...video_shared import fallback_deblur
+from ...video_shared import missing_backend
 
 CATEGORY = "llfnodes/视频处理/视频去模糊"
 
@@ -11,17 +11,19 @@ class MIMOUNetNode(io.ComfyNode):
             node_id="llfnodes.MIMOUNet",
             display_name="MIMO-UNet",
             category=CATEGORY,
-            description="MIMO-UNet（官方后端未装时使用本地回退，可先跑通工作流）。",
+            description="MIMO-UNet：需官方依赖/权重；未就绪时直接报错，不做替代实现。",
             inputs=[
                 io.Video.Input("video"),
-                io.String.Input("model_path", default="", tooltip="可选：官方权重路径（当前回退不强制）"),
+                io.String.Input("model_path", default="", tooltip="官方权重或仓库路径（必填，视具体后端而定）"),
             ],
             outputs=[io.Video.Output("VIDEO"), io.String.Output("INFO")],
         )
 
     @classmethod
     def execute(cls, video, model_path=""):
-        out_v, info = fallback_deblur(video, "MIMO-UNet")
+        tip = "安装官方视频去模糊实现并填写 model_path。"
         if model_path:
-            info = info + f" | model_path={model_path}"
-        return io.NodeOutput(out_v, info)
+            tip = tip + " 当前 model_path=" + repr(model_path)
+        else:
+            tip = tip + " 当前未提供 model_path。"
+        missing_backend("MIMO-UNet", tip)
