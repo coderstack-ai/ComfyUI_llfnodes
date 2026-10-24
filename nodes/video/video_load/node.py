@@ -13,7 +13,7 @@ class VideoLoadNode(io.ComfyNode):
         return io.Schema(
             node_id="llfnodes.VideoLoadNode",
             display_name="视频加载",
-            category="llfnodes/video",
+            category="llfnodes/视频处理",
             has_intermediate_output=True,
             inputs=[
                 io.Combo.Input("file", options=sorted(files), upload=io.UploadType.video),

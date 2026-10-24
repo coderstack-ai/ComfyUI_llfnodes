@@ -48,7 +48,7 @@ class AudioLoadNode(io.ComfyNode):
         return io.Schema(
             node_id="llfnodes.AudioLoadNode",
             display_name="音频加载",
-            category="llfnodes/audio",
+            category="llfnodes/音频处理",
             inputs=[
                 io.Combo.Input("audio", options=sorted(files), upload=io.UploadType.audio),
             ],

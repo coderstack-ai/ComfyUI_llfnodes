@@ -18,7 +18,7 @@ class ImageLoadNode(io.ComfyNode):
         return io.Schema(
             node_id="llfnodes.ImageLoadNode",
             display_name="图像加载",
-            category="llfnodes/image",
+            category="llfnodes/图像处理",
             inputs=[
                 io.Combo.Input("image", options=sorted(files), upload=io.UploadType.image),
             ],

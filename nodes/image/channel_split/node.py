@@ -8,7 +8,7 @@ class ChannelSplitNode(io.ComfyNode):
         return io.Schema(
             node_id="llfnodes.ChannelSplitNode",
             display_name="通道拆分",
-            category="llfnodes/image",
+            category="llfnodes/图像处理",
             description="将图像拆分为 R / G / B / A 四个通道（MASK）。",
             inputs=[
                 io.Image.Input("image"),

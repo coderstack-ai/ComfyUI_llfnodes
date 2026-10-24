@@ -99,6 +99,10 @@ cookiecutter-pypackage-env/
 .history/
 *.code-workspace
 
+# Per-node model weights (downloaded locally)
+**/models/**
+!**/\models/.gitkeep
+
 # Frontend extension
 node_modules/
 .env

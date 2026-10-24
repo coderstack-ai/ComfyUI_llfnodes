@@ -18,7 +18,7 @@ class ChannelMergeNode(io.ComfyNode):
         return io.Schema(
             node_id="llfnodes.ChannelMergeNode",
             display_name="通道合并",
-            category="llfnodes/image",
+            category="llfnodes/图像处理",
             description="将 R / G / B（可选 A）通道合并为图像。不接 A 时输出 3 通道，接 A 时输出 4 通道。",
             inputs=[
                 io.Mask.Input("R"),
